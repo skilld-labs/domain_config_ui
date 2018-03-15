@@ -3,7 +3,7 @@ services:
     class: Drupal\domain_config_ui\DomainConfigUINegotiator
     tags:
       - { name: persist }
-    arguments: ['@request_stack', '@module_handler', '@domain.loader', '@config.factory']
+    arguments: ['@request_stack', '@module_handler', '@entity_type.manager', '@config.factory']
 
   domain.negotiator:
     alias: domain_config_ui.negotiator
