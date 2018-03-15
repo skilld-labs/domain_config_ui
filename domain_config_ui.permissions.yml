@@ -1,0 +1,3 @@
+access domain config widget:
+  title: 'Access domain config widget'
+  restrict access: true
