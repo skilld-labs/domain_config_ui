@@ -1,21 +1,17 @@
 <?php
+
 namespace Drupal\domain_config_ui\Config;
 
 use Drupal\Core\Config\ConfigFactory as CoreConfigFactory;
-use Drupal\Core\Config\StorageInterface;
-use Drupal\Core\Config\TypedConfigManagerInterface;
 use Drupal\domain_config\DomainConfigOverrider;
-use Drupal\domain_config_ui\Config\Config;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
- * Overrides Drupal\Core\Config\ConfigFactory in order to use our own Config class.
+ * Extends core ConfigFactory class to save domain specific configuration.
  */
 class ConfigFactory extends CoreConfigFactory {
 
   /**
-   * {@inheritDoc}
-   * @see \Drupal\Core\Config\ConfigFactory::doLoadMultiple()
+   * {@inheritdoc}
    */
   protected function doLoadMultiple(array $names, $immutable = TRUE) {
     // Let parent load multiple load as usual.
@@ -24,10 +20,10 @@ class ConfigFactory extends CoreConfigFactory {
     // Pre-load remaining configuration files.
     if (!$immutable && !empty($names)) {
       // Initialise override information.
-      $module_overrides = array();
+      $module_overrides = [];
       $storage_data = $this->storage->readMultiple($names);
 
-      // Load module overrides so that domain specific config is loaded in admin forms.
+      // Load module overrides so that domain config is loaded in admin forms.
       if (!empty($storage_data)) {
         // Only get domain overrides if we have configuration to override.
         $module_overrides = $this->loadDomainOverrides($names);
@@ -49,11 +45,10 @@ class ConfigFactory extends CoreConfigFactory {
   }
 
   /**
-   * {@inheritDoc}
-   * @see \Drupal\Core\Config\ConfigFactory::doGet()
+   * {@inheritdoc}
    */
   protected function doGet($name, $immutable = TRUE) {
-    // Do not apply overrides if configuring 'all' domains or config is immutable.
+    // If no selected domain or config is immutable then don't override config.
     if (!isset($_SESSION['config_save_domain'])
       || empty($_SESSION['config_save_domain'])
       || $immutable) {
@@ -68,8 +63,8 @@ class ConfigFactory extends CoreConfigFactory {
       // storage, create a new object.
       $config = $this->createConfigObject($name, $immutable);
 
-      // Load domain overrides so that domain specific config is loaded in admin forms.
-      $overrides = $this->loadDomainOverrides(array($name));
+      // Load domain overrides so domain config is loaded in admin forms.
+      $overrides = $this->loadDomainOverrides([$name]);
       if (isset($overrides[$name])) {
         $config->setModuleOverride($overrides[$name]);
       }
@@ -82,8 +77,8 @@ class ConfigFactory extends CoreConfigFactory {
     }
   }
 
-/**
-   * Get arbitrary overrides for the named configuration objects from Domain module.
+  /**
+   * Get Domain module overrides for the named configuration objects.
    *
    * @param array $names
    *   The names of the configuration objects to get overrides for.
@@ -92,7 +87,7 @@ class ConfigFactory extends CoreConfigFactory {
    *   An array of overrides keyed by the configuration object name.
    */
   protected function loadDomainOverrides(array $names) {
-    $overrides = array();
+    $overrides = [];
     foreach ($this->configFactoryOverrides as $override) {
       // Only return domain overrides.
       if ($override instanceof DomainConfigOverrider) {

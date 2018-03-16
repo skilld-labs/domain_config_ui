@@ -3,18 +3,15 @@
 namespace Drupal\domain_config_ui\Config;
 
 use Drupal\Core\Config\Config as CoreConfig;
-use Drupal\Core\Config\StorageInterface;
-use Drupal\Core\Config\TypedConfigManagerInterface;
-use Drupal\domain\DomainNegotiatorInterface;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
- * Extend core Config class to save domain specific configuration.
+ * Extends core Config class to save domain specific configuration.
  */
 class Config extends CoreConfig {
   /**
-   * List of config that should always be saved globally.
-   * Use * for wildcards.
+   * List of config that should always be saved globally. Use * for wildcards.
+   *
+   * @var array
    */
   protected $disallowedConfig = [
     'core.extension',
@@ -33,8 +30,8 @@ class Config extends CoreConfig {
       // Get domain config name for saving.
       $domainConfigName = $this->getDomainConfigName();
 
-      // If config is new and we are currently saving domain specific configuration,
-      // save with original name first so that there is always a default configuration.
+      // If config is new and we are saving domain specific configuration,
+      // save with original name so there is always a default configuration.
       if ($this->isNew && $domainConfigName != $originalName) {
         parent::save($has_trusted_data);
       }
@@ -74,8 +71,8 @@ class Config extends CoreConfig {
     }
 
     // Build prefix and add to front of existing key.
-    $domain_id = !empty($_SESSION['domain_config_ui']['config_save_domain']) ?
-      $_SESSION['domain_config_ui']['config_save_domain'] : '';
+    $domain_id = !empty($_SESSION['config_save_domain']) ?
+      $_SESSION['config_save_domain'] : '';
     if ($domain = \Drupal::entityTypeManager()
       ->getStorage('domain')
       ->load($domain_id)
@@ -91,4 +88,5 @@ class Config extends CoreConfig {
     // Return current name by default.
     return $this->name;
   }
+
 }

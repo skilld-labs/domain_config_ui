@@ -1,4 +1,5 @@
 <?php
+
 namespace Drupal\domain_config_ui\Form;
 
 use Drupal\Core\Ajax\RedirectCommand;
@@ -11,6 +12,11 @@ use Drupal\Core\Ajax\AjaxResponse;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 
+/**
+ * Class SwitchForm.
+ *
+ * @package Drupal\domain_config_ui
+ */
 class SwitchForm extends FormBase {
   /**
    * The Domain negotiator.
@@ -29,9 +35,9 @@ class SwitchForm extends FormBase {
   /**
    * Class constructor.
    *
-   * @param DomainNegotiatorInterface $domain_negotiator
+   * @param \Drupal\domain\DomainNegotiatorInterface $domain_negotiator
    *   The Domain negotiator.
-   * @param DomainLoaderInterface $domain_loader
+   * @param \Drupal\domain\DomainLoaderInterface $domain_loader
    *   The domain loader.
    */
   public function __construct(DomainNegotiatorInterface $domain_negotiator, DomainLoaderInterface $domain_loader) {
@@ -52,14 +58,14 @@ class SwitchForm extends FormBase {
   }
 
   /**
-   * {@inheritDoc}
+   * {@inheritdoc}
    */
   public function getFormId() {
     return 'domain_config_ui_switch_form';
   }
 
   /**
-   * {@inheritDoc}
+   * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, Request $request = NULL) {
     // Only allow access to domain administrators.
@@ -81,15 +87,13 @@ class SwitchForm extends FormBase {
     else {
       $selected = $form_state->getValue('config_save_domain');
     }
-    $form['config_save_domain'] = array(
+    $form['config_save_domain'] = [
       '#type' => 'select',
       '#title' => 'Save config for:',
       '#options' => array_merge(['' => 'All Domains'], $this->domainLoader->loadOptionsList()),
       '#default_value' => $selected,
-      '#ajax' => array(
-        'callback' => '::switchCallback',
-      ),
-    );
+      '#ajax' => ['callback' => '::switchCallback'],
+    ];
 
     // Attach CSS to position form.
     $form['#attached']['library'][] = 'domain_config_ui/drupal.domain_config_ui.admin';
@@ -98,7 +102,7 @@ class SwitchForm extends FormBase {
   }
 
   /**
-   * {@inheritDoc}
+   * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     // Form does not require submit handler.
@@ -109,14 +113,14 @@ class SwitchForm extends FormBase {
    *
    * @param array $form
    *   The form array.
-   * @param FormStateInterface $form_state
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The form state array.
    *
-   * @return AjaxResponse
+   * @return \Drupal\Core\Ajax\AjaxResponse
    *   The response.
    */
   public function switchCallback(array &$form, FormStateInterface $form_state) {
-    $this->domainNegotiator->setSelectedDomain($form_state->getValue('config_save_domain'));
+    $_SESSION['config_save_domain'] = $form_state->getValue('config_save_domain');
     $response = new AjaxResponse();
     // Refresh the page after changing the domain.
     $path = $form['current_path']['#value'];
@@ -129,4 +133,3 @@ class SwitchForm extends FormBase {
   }
 
 }
-

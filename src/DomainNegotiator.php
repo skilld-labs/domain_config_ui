@@ -8,6 +8,7 @@ use Drupal\domain\DomainNegotiator as Negotiator;
  * {@inheritdoc}
  */
 class DomainNegotiator extends Negotiator {
+
   /**
    * Determine the active domain.
    */
@@ -39,21 +40,8 @@ class DomainNegotiator extends Negotiator {
    */
   public function getSelectedDomainId() {
     // Return selected domain ID on admin paths only.
-    return !empty($_SESSION['domain_config_ui']['config_save_domain']) ?
-      $_SESSION['domain_config_ui']['config_save_domain'] : '';
+    return !empty($_SESSION['config_save_domain']) ?
+      $_SESSION['config_save_domain'] : '';
   }
 
-  /**
-   * Set the current selected domain ID.
-   *
-   * @param string $domain_id
-   */
-  public function setSelectedDomain($domain_id) {
-    if ($domain = $this->domainStorage->load($domain_id)) {
-      $_SESSION['domain_config_ui']['config_save_domain'] = $domain_id;
-    }
-    else {
-      $_SESSION['domain_config_ui']['config_save_domain'] = '';
-    }
-  }
 }
