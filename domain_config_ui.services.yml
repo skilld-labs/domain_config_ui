@@ -5,12 +5,9 @@ services:
 
   domain_config_ui.factory:
     class: Drupal\domain_config_ui\Config\ConfigFactory
+    decorates: config.factory
+    decoration_priority: 1
     tags:
       - { name: event_subscriber }
       - { name: service_collector, tag: 'config.factory.override', call: addOverride }
     arguments: ['@config.storage', '@event_dispatcher', '@config.typed']
-    calls:
-      - [setDomainConfigUiManager, ['@domain_config_ui.manager']]
-
-  config.factory:
-    alias: domain_config_ui.factory
