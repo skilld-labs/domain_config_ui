@@ -2,17 +2,51 @@
 
 namespace Drupal\domain_config_ui\Form;
 
-use Drupal\Core\Form\FormBase;
-use Drupal\Core\Form\FormStateInterface;
+use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\RedirectCommand;
-use Drupal\Component\Utility\UrlHelper;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\EventSubscriber\MainContentViewSubscriber;
+use Drupal\Core\Form\FormBase;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Language\LanguageManagerInterface;
+use Drupal\domain_config_ui\DomainConfigUIManager;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Class SwitchForm.
  */
 class SwitchForm extends FormBase {
+
+  /**
+   * Constructs a new DevelGenerateForm object.
+   *
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager.
+   * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
+   *   The language manager.
+   * @param \Drupal\domain_config_ui\DomainConfigUIManager $domain_config_ui_manager
+   *   The domain config UI manager.
+   */
+  public function __construct(EntityTypeManagerInterface $entity_type_manager,
+    LanguageManagerInterface $language_manager,
+    DomainConfigUIManager $domain_config_ui_manager) {
+    $this->domainConfigUiManager = $domain_config_ui_manager;
+    $this->languageManager = $language_manager;
+    $this->entityTypeManager = $entity_type_manager;
+    $this->domainStorage = $this->entityTypeManager->getStorage('domain');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('entity_type.manager'),
+      $container->get('language_manager'),
+      $container->get('domain_config_ui.manager')
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -48,11 +82,11 @@ class SwitchForm extends FormBase {
     ];
 
     // Add domain switch select field.
-    $selected_domain = \Drupal::service('domain_config_ui.manager')->getSelectedDomain();
+    $selected_domain = $this->domainConfigUiManager->getSelectedDomain();
     $form['domain_config_ui']['config_save_domain'] = [
       '#type' => 'select',
       '#title' => 'Domain',
-      '#options' => array_merge(['' => 'All Domains'], \Drupal::service('domain.loader')->loadOptionsList()),
+      '#options' => array_merge(['' => 'All Domains'], $this->domainStorage->loadOptionsList()),
       '#default_value' => $selected_domain ? $selected_domain->id() : '',
       '#ajax' => [
         'callback' => '::switchCallback',
@@ -60,9 +94,9 @@ class SwitchForm extends FormBase {
     ];
 
     // Add language select field.
-    $selected_language = \Drupal::service('domain_config_ui.manager')->getSelectedLanguage();
+    $selected_language = $this->domainConfigUiManager->getSelectedLanguage();
     $language_options = ['' => 'Default'];
-    foreach (\Drupal::languageManager()->getLanguages() as $id => $language) {
+    foreach ($this->languageManager->getLanguages() as $id => $language) {
       $language_options[$id] = $language->getName();
     }
     $form['domain_config_ui']['config_save_language'] = [
