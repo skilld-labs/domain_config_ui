@@ -50,7 +50,11 @@ function domain_config_ui_form_alter(array &$form, FormStateInterface $form_stat
   ];
 
   // Add domain switch select field.
-  $selected_domain = \Drupal::service('domain_config_ui.manager')->getSelectedDomain();
+  $selected_domain_id = \Drupal::service('domain_config_ui.manager')
+    ->getSelectedDomainId();
+  $selected_domain = \Drupal::service('entity_type.manager')
+    ->getStorage('domain')
+    ->load($selected_domain_id);
   $form['domain_config_ui']['config_save_domain'] = [
     '#type' => 'select',
     '#title' => 'Domain',
@@ -62,7 +66,6 @@ function domain_config_ui_form_alter(array &$form, FormStateInterface $form_stat
   ];
 
   // Add language select field.
-  $selected_language = \Drupal::service('domain_config_ui.manager')->getSelectedLanguage();
   $language_options = ['' => 'Default'];
   foreach (\Drupal::languageManager()->getLanguages() as $id => $language) {
     $language_options[$id] = $language->getName();
@@ -71,7 +74,7 @@ function domain_config_ui_form_alter(array &$form, FormStateInterface $form_stat
     '#type' => 'select',
     '#title' => 'Language',
     '#options' => $language_options,
-    '#default_value' => $selected_language ? $selected_language->getId() : '',
+    '#default_value' => \Drupal::service('domain_config_ui.manager')->getSelectedLanguageId(),
     '#ajax' => [
       'callback' => 'domain_config_ui_domain_switch_form_callback',
     ],
@@ -87,9 +90,16 @@ function domain_config_ui_form_alter(array &$form, FormStateInterface $form_stat
  * Helper to generate the markup for the domain save warning message.
  */
 function domain_config_ui_save_warning_message() {
-  $selected_domain = \Drupal::service('domain_config_ui.manager')->getSelectedDomain();
+  $selected_domain_id = \Drupal::service('domain_config_ui.manager')
+    ->getSelectedDomainId();
+  $selected_domain = \Drupal::service('entity_type.manager')
+    ->getStorage('domain')
+    ->load($selected_domain_id);
   if ($selected_domain) {
-    $selected_language = \Drupal::service('domain_config_ui.manager')->getSelectedLanguage();
+    $selected_language_id = \Drupal::service('domain_config_ui.manager')
+      ->getSelectedLanguageId();
+    $selected_language = \Drupal::service('language_manager')
+      ->getLanguage($selected_language_id);
     $message = new TranslatableMarkup('Configuration will be saved for @domain @language', [
       '@domain' => $selected_domain->label(),
       '@language' => $selected_language ? '(' . $selected_language->getName() . ')' : '',
@@ -157,10 +167,10 @@ function domain_config_ui_route_is_admin() {
  */
 function domain_config_ui_domain_switch_form_callback(array $form, FormStateInterface $form_state) {
   // Switch the current domain.
-  \Drupal::service('domain_config_ui.manager')->setSelectedDomain($form_state->getValue('config_save_domain'));
+  \Drupal::service('domain_config_ui.manager')->setSelectedDomainId($form_state->getValue('config_save_domain'));
 
   // Switch the current language.
-  \Drupal::service('domain_config_ui.manager')->setSelectedLanguage($form_state->getValue('config_save_language'));
+  \Drupal::service('domain_config_ui.manager')->setSelectedLanguageId($form_state->getValue('config_save_language'));
 
   // Reset form with selected domain configuration.
   $form_state->setUserInput([]);

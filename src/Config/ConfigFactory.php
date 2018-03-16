@@ -3,7 +3,11 @@
 namespace Drupal\domain_config_ui\Config;
 
 use Drupal\Core\Config\ConfigFactory as CoreConfigFactory;
+use Drupal\Core\Config\StorageInterface;
+use Drupal\Core\Config\TypedConfigManagerInterface;
+use Drupal\domain_config\DomainConfigOverrider;
 use Drupal\domain_config_ui\DomainConfigUIManager;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Extends core ConfigFactory class to save domain specific configuration.
@@ -28,6 +32,26 @@ class ConfigFactory extends CoreConfigFactory {
    * @var Drupal\domain_config_ui\DomainConfigUIManager
    */
   protected $domainConfigUIManager;
+
+  /**
+   * Constructs the Config factory.
+   *
+   * @param \Drupal\Core\Config\StorageInterface $storage
+   *   The configuration storage engine.
+   * @param \Symfony\Component\EventDispatcher\EventDispatcherInterface $event_dispatcher
+   *   An event dispatcher instance to use for configuration events.
+   * @param \Drupal\Core\Config\TypedConfigManagerInterface $typed_config
+   *   The typed configuration manager.
+   * @param \Drupal\domain_config_ui\DomainConfigUIManager $domain_config_ui_manager
+   *   The domain config UI manager.
+   */
+  public function __construct(StorageInterface $storage,
+    EventDispatcherInterface $event_dispatcher,
+    TypedConfigManagerInterface $typed_config,
+    DomainConfigUIManager $domain_config_ui_manager) {
+    parent::__construct($storage, $event_dispatcher, $typed_config);
+    $this->domainConfigUIManager = $domain_config_ui_manager;
+  }
 
   /**
    * Helper to check if config is allowed to be saved for domain.
@@ -85,7 +109,9 @@ class ConfigFactory extends CoreConfigFactory {
     $list = parent::doLoadMultiple($names, $immutable);
 
     // Do not override if configuring 'all' domains or config is immutable.
-    if (empty($this->domainConfigUIManager) || !$this->domainConfigUIManager->getSelectedDomainId() || !$this->isAllowedDomainConfig(current($names))) {
+    if (empty($this->domainConfigUIManager)
+      || !$this->domainConfigUIManager->getSelectedDomainId()
+      || !$this->isAllowedDomainConfig(current($names))) {
       return $list;
     }
 
@@ -157,7 +183,14 @@ class ConfigFactory extends CoreConfigFactory {
    *   An array of overrides keyed by the configuration object name.
    */
   protected function loadDomainOverrides(array $names) {
-    return $this->domainConfigUIManager->loadOverrides($names);
+    $overrides = [];
+    foreach ($names as $name) {
+      $config_name = $this->domainConfigUIManager->getSelectedConfigName($name);
+      if ($override = $this->storage->read($config_name)) {
+        $overrides[$name] = $override;
+      }
+    }
+    return $overrides;
   }
 
 }
