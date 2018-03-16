@@ -3,7 +3,10 @@
 namespace Drupal\domain_config_ui\Config;
 
 use Drupal\Core\Config\Config as CoreConfig;
+use Drupal\Core\Config\StorageInterface;
+use Drupal\Core\Config\TypedConfigManagerInterface;
 use Drupal\domain\DomainNegotiatorInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Extend core Config class to save domain specific configuration.
@@ -18,21 +21,6 @@ class Config extends CoreConfig {
     'domain.record.*',
     'domain_alias.*',
   ];
-
-  /**
-   * The Domain negotiator.
-   *
-   * @var \Drupal\domain\DomainNegotiatorInterface
-   */
-  protected $domainNegotiator;
-
-  /**
-   * Set the Domain negotiator.
-   * @param DomainNegotiatorInterface $domain_negotiator
-   */
-  public function setDomainNegotiator(DomainNegotiatorInterface $domain_negotiator) {
-    $this->domainNegotiator = $domain_negotiator;
-  }
 
   /**
    * {@inheritdoc}
@@ -86,8 +74,13 @@ class Config extends CoreConfig {
     }
 
     // Build prefix and add to front of existing key.
-    if ($selected_domain = $this->domainNegotiator->getSelectedDomain()) {
-      $prefix = 'domain.config.' . $selected_domain->id() . '.';
+    $domain_id = !empty($_SESSION['domain_config_ui']['config_save_domain']) ?
+      $_SESSION['domain_config_ui']['config_save_domain'] : '';
+    if ($domain = \Drupal::entityTypeManager()
+      ->getStorage('domain')
+      ->load($domain_id)
+    ) {
+      $prefix = 'domain.config.' . $domain->id() . '.';
       // @TODO: Allow selection of language.
       if ($language = \Drupal::languageManager()->getCurrentLanguage()) {
         $prefix .= $language->getId() . '.';

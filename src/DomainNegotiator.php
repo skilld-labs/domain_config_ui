@@ -2,12 +2,12 @@
 
 namespace Drupal\domain_config_ui;
 
-use Drupal\domain\DomainNegotiator;
+use Drupal\domain\DomainNegotiator as Negotiator;
 
 /**
  * {@inheritdoc}
  */
-class DomainConfigUINegotiator extends DomainNegotiator {
+class DomainNegotiator extends Negotiator {
   /**
    * Determine the active domain.
    */
@@ -28,7 +28,8 @@ class DomainConfigUINegotiator extends DomainNegotiator {
    */
   public function getSelectedDomain() {
     $selected_domain_id = $this->getSelectedDomainId();
-    if ($selected_domain_id && $selected_domain = $this->domainLoader->load($selected_domain_id)) {
+    if ($selected_domain_id
+      && $selected_domain = $this->domainStorage->load($selected_domain_id)) {
       return $selected_domain;
     }
   }
@@ -38,7 +39,8 @@ class DomainConfigUINegotiator extends DomainNegotiator {
    */
   public function getSelectedDomainId() {
     // Return selected domain ID on admin paths only.
-    return !empty($_SESSION['domain_config_ui']['config_save_domain']) ? $_SESSION['domain_config_ui']['config_save_domain'] : '';
+    return !empty($_SESSION['domain_config_ui']['config_save_domain']) ?
+      $_SESSION['domain_config_ui']['config_save_domain'] : '';
   }
 
   /**
@@ -47,7 +49,7 @@ class DomainConfigUINegotiator extends DomainNegotiator {
    * @param string $domain_id
    */
   public function setSelectedDomain($domain_id) {
-    if ($domain = $this->domainLoader->load($domain_id)) {
+    if ($domain = $this->domainStorage->load($domain_id)) {
       $_SESSION['domain_config_ui']['config_save_domain'] = $domain_id;
     }
     else {

@@ -1,12 +1,22 @@
 services:
   domain_config_ui.negotiator:
-    class: Drupal\domain_config_ui\DomainConfigUINegotiator
-    tags:
-      - { name: persist }
-    arguments: ['@request_stack', '@module_handler', '@entity_type.manager', '@config.factory']
+    class: Drupal\domain_config_ui\DomainNegotiator
+    decorates: domain.negotiator
+    decoration_priority: 1
+    arguments:
+      - '@request_stack'
+      - '@module_handler'
+      - '@entity_type.manager'
+      - '@config.factory'
 
-  domain_config_ui.overrider:
-    class: Drupal\domain_config_ui\DomainConfigUIOverrider
+  domain_config_ui.factory:
+    class: Drupal\domain_config_ui\Config\ConfigFactory
+    decorates: config.factory
+    decoration_priority: 1
     tags:
-      - { name: config.factory.override, priority: -150}
-    arguments: ['@config.storage']
+      - { name: event_subscriber }
+      - { name: service_collector, tag: 'config.factory.override', call: addOverride }
+    arguments:
+      - '@config.storage'
+      - '@event_dispatcher'
+      - '@config.typed'
