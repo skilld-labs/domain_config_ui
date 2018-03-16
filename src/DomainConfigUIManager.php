@@ -3,10 +3,8 @@
 namespace Drupal\domain_config_ui;
 
 use Drupal\domain\DomainLoaderInterface;
-use Drupal\domain\DomainInterface;
 use Drupal\Core\Config\StorageInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
-use Drupal\Core\Language\LanguageInterface;
 
 /**
  * Domain Config UI manager.
@@ -15,45 +13,47 @@ class DomainConfigUIManager {
   /**
    * A storage controller instance for reading and writing configuration data.
    *
-   * @var StorageInterface
+   * @var \Drupal\Core\Config\StorageInterface
    */
   protected $storage;
 
   /**
    * Domain loader.
    *
-   * @var DomainLoaderInterface
+   * @var \Drupal\domain\DomainLoaderInterface
    */
   protected $domainLoader;
 
   /**
    * Language manager.
    *
-   * @var LanguageManagerInterface
+   * @var \Drupal\Core\Language\LanguageManagerInterface
    */
   protected $languageManager;
 
   /**
    * The domain context of the request.
    *
-   * @var DomainInterface $domain
+   * @var \Drupal\domain\DomainInterface
    */
   protected $domain;
 
   /**
    * The language context of the request.
    *
-   * @var LanguageInterface $language
+   * @var \Drupal\Core\Language\LanguageInterface
    */
   protected $language;
 
   /**
    * Constructs domain config UI service.
    *
-   * @param StorageInterface $storage
+   * @param \Drupal\Core\Config\StorageInterface $storage
    *   The configuration storage engine.
-   * @param DomainLoaderInterface $domain_loader
+   * @param \Drupal\domain\DomainLoaderInterface $domain_loader
    *   The domain loader.
+   * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
+   *   The language manager.
    */
   public function __construct(StorageInterface $storage, DomainLoaderInterface $domain_loader, LanguageManagerInterface $language_manager) {
     $this->storage = $storage;
@@ -89,7 +89,9 @@ class DomainConfigUIManager {
 
   /**
    * Get selected config name.
+   *
    * @param string $name
+   *   The config name.
    */
   public function getSelectedConfigName($name) {
     // Build prefix and add to front of existing key.
@@ -123,13 +125,15 @@ class DomainConfigUIManager {
 
   /**
    * Set the current selected domain ID.
+   *
    * @param string $domain_id
+   *   The Domain ID.
    */
   public function setSelectedDomain($domain_id) {
     if ($domain = $this->domainLoader->load($domain_id)) {
       // Set session for subsequent request.
       $_SESSION['domain_config_ui']['config_save_domain'] = $domain_id;
-      // Switch active domain now so that selected domain configuration can be loaded immediatly.
+      // Switch active language to load selected domain config immediately.
       // This is primarily for switching domain with AJAX request.
       $this->domain = $domain;
     }
@@ -141,13 +145,15 @@ class DomainConfigUIManager {
 
   /**
    * Set the selected language.
+   *
    * @param string $language_id
+   *   The language ID.
    */
   public function setSelectedLanguage($language_id) {
     if ($language = $this->languageManager->getLanguage($language_id)) {
       // Set session for subsequent request.
       $_SESSION['domain_config_ui']['config_save_language'] = $language_id;
-      // Switch active language now so that selected domain configuration can be loaded immediatly.
+      // Switch active language to load selected domain config immediately.
       // This is primarily for switching domain with AJAX request.
       $this->language = $language;
     }
@@ -173,4 +179,5 @@ class DomainConfigUIManager {
       return $selected_language;
     }
   }
+
 }

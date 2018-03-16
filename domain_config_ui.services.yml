@@ -10,7 +10,7 @@ services:
       - { name: service_collector, tag: 'config.factory.override', call: addOverride }
     arguments: ['@config.storage', '@event_dispatcher', '@config.typed']
     calls:
-      - [setDomainConfigUIManager, ['@domain_config_ui.manager']]
+      - [setDomainConfigUiManager, ['@domain_config_ui.manager']]
 
   config.factory:
     alias: domain_config_ui.factory

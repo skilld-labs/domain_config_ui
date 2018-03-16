@@ -1,4 +1,5 @@
 <?php
+
 namespace Drupal\domain_config_ui\Form;
 
 use Drupal\Core\Form\FormBase;
@@ -8,16 +9,20 @@ use Drupal\Core\Ajax\RedirectCommand;
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\EventSubscriber\MainContentViewSubscriber;
 
+/**
+ * Class SwitchForm.
+ */
 class SwitchForm extends FormBase {
+
   /**
-   * {@inheritDoc}
+   * {@inheritdoc}
    */
   public function getFormId() {
     return 'domain_config_ui_switch_form';
   }
 
   /**
-   * {@inheritDoc}
+   * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     // Only allow access to domain administrators.
@@ -30,7 +35,9 @@ class SwitchForm extends FormBase {
    * Helper to add switch fields to form.
    *
    * @param array $form
-   * @param FormStateInterface $form_state
+   *   The form array.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state array.
    */
   public function addSwitchFields(array $form, FormStateInterface $form_state) {
     // Create fieldset to group domain fields.
@@ -72,7 +79,7 @@ class SwitchForm extends FormBase {
   }
 
   /**
-   * {@inheritDoc}
+   * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     // Form does not require submit handler.
@@ -82,7 +89,9 @@ class SwitchForm extends FormBase {
    * Callback to remember save mode and reload page.
    *
    * @param array $form
-   * @param FormStateInterface $form_state
+   *   The form array.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state array.
    */
   public static function switchCallback(array &$form, FormStateInterface $form_state) {
     // Switch the current domain.
@@ -93,7 +102,8 @@ class SwitchForm extends FormBase {
 
     // Extract requesting page URI from ajax URI.
     // Copied from Drupal\Core\Form\FormBuilder::buildFormAction().
-    $request_uri = \Drupal::service('request_stack')->getMasterRequest()->getRequestUri();
+    $request = \Drupal::service('request_stack')->getMasterRequest();
+    $request_uri = $request->getRequestUri();
 
     // Prevent cross site requests via the Form API by using an absolute URL
     // when the request uri starts with multiple slashes.
@@ -110,4 +120,5 @@ class SwitchForm extends FormBase {
     $response->addCommand(new RedirectCommand($request_uri));
     return $response;
   }
+
 }

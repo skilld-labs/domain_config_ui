@@ -12,15 +12,17 @@ class Config extends CoreConfig {
   /**
    * The Domain config UI manager.
    *
-   * @var DomainConfigUIManager
+   * @var \Drupal\domain_config_ui\DomainConfigUIManager
    */
   protected $domainConfigUIManager;
 
   /**
    * Set the Domain config UI manager.
-   * @param DomainConfigUIManager $domain_config_ui_manager
+   *
+   * @param \Drupal\domain_config_ui\DomainConfigUIManager $domain_config_ui_manager
+   *   The Domain config UI manager.
    */
-  public function setDomainConfigUIManager($domain_config_ui_manager) {
+  public function setDomainConfigUiManager(DomainConfigUIManager $domain_config_ui_manager) {
     $this->domainConfigUIManager = $domain_config_ui_manager;
   }
 
@@ -35,8 +37,8 @@ class Config extends CoreConfig {
       // Get domain config name for saving.
       $domainConfigName = $this->getDomainConfigName();
 
-      // If config is new and we are currently saving domain specific configuration,
-      // save with original name first so that there is always a default configuration.
+      // If config is new and we are saving domain specific configuration,
+      // save with original name so there is always a default configuration.
       if ($this->isNew && $domainConfigName != $originalName) {
         parent::save($has_trusted_data);
       }
