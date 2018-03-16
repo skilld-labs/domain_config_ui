@@ -2,8 +2,8 @@
 
 namespace Drupal\domain_config_ui;
 
-use Drupal\domain\DomainLoaderInterface;
 use Drupal\Core\Config\StorageInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
 
 /**
@@ -18,11 +18,11 @@ class DomainConfigUIManager {
   protected $storage;
 
   /**
-   * Domain loader.
+   * Entity type manager.
    *
-   * @var \Drupal\domain\DomainLoaderInterface
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  protected $domainLoader;
+  protected $entityTypeManager;
 
   /**
    * Language manager.
@@ -50,14 +50,17 @@ class DomainConfigUIManager {
    *
    * @param \Drupal\Core\Config\StorageInterface $storage
    *   The configuration storage engine.
-   * @param \Drupal\domain\DomainLoaderInterface $domain_loader
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The domain loader.
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
    *   The language manager.
    */
-  public function __construct(StorageInterface $storage, DomainLoaderInterface $domain_loader, LanguageManagerInterface $language_manager) {
+  public function __construct(StorageInterface $storage,
+    EntityTypeManagerInterface $entity_type_manager,
+    LanguageManagerInterface $language_manager) {
     $this->storage = $storage;
-    $this->domainLoader = $domain_loader;
+    $this->entityTypeManager = $entity_type_manager;
+    $this->domainStorage = $this->entityTypeManager->getStorage('domain');
     $this->languageManager = $language_manager;
 
     // Get the language context.
