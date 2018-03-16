@@ -3,12 +3,33 @@
 namespace Drupal\domain_config_ui\Config;
 
 use Drupal\Core\Config\ConfigFactory as CoreConfigFactory;
+use Drupal\Core\Config\ImmutableConfig;
 use Drupal\domain_config\DomainConfigOverrider;
 
 /**
  * Extends core ConfigFactory class to save domain specific configuration.
  */
 class ConfigFactory extends CoreConfigFactory {
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function createConfigObject($name, $immutable) {
+    if ($immutable) {
+      return new ImmutableConfig(
+        $name,
+        $this->storage,
+        $this->eventDispatcher,
+        $this->typedConfigManager
+      );
+    }
+    return new Config(
+      $name,
+      $this->storage,
+      $this->eventDispatcher,
+      $this->typedConfigManager
+    );
+  }
 
   /**
    * {@inheritdoc}
