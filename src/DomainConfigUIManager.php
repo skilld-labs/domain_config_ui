@@ -40,7 +40,6 @@ class DomainConfigUIManager {
     $_SESSION['domain_config_ui']['config_save_domain'] = $domain_id;
   }
 
-
   /**
    * Get the selected language ID.
    */
@@ -58,6 +57,5 @@ class DomainConfigUIManager {
     // Set session for subsequent request.
     $_SESSION['domain_config_ui']['config_save_language'] = $language_id;
   }
-
 
 }

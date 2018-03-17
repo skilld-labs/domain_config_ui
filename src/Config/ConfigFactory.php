@@ -5,7 +5,6 @@ namespace Drupal\domain_config_ui\Config;
 use Drupal\Core\Config\ConfigFactory as CoreConfigFactory;
 use Drupal\Core\Config\StorageInterface;
 use Drupal\Core\Config\TypedConfigManagerInterface;
-use Drupal\domain_config\DomainConfigOverrider;
 use Drupal\domain_config_ui\DomainConfigUIManager;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
@@ -60,13 +59,9 @@ class ConfigFactory extends CoreConfigFactory {
    *   The configuration name.
    */
   protected function isAllowedDomainConfig(string $name) {
-    // Get default allowed config and allow other modules to alter.
-    $allowed = $this->allowedDomainConfig;
-    \Drupal::moduleHandler()->alter('domain_config_allowed', $allowed);
-
     // Return original name if reserved not allowed.
     $is_allowed = FALSE;
-    foreach ($allowed as $config_name) {
+    foreach ($this->allowedDomainConfig as $config_name) {
       // Convert config_name into into regex.
       // Escapes regex syntax, but keeps * wildcards.
       $pattern = '/^' . str_replace('\*', '.*', preg_quote($config_name, '/')) . '$/';
