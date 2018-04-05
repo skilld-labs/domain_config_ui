@@ -6,7 +6,7 @@ use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
- * Class ConfigForm
+ * Class SettingsForm.
  */
 class SettingsForm extends ConfigFormBase {
 
@@ -29,14 +29,20 @@ class SettingsForm extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config('domain_config_ui.settings');
-    $form['allowed'] = array(
+    $form['remember_domain'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Remember Domain'),
+      '#default_value' => $config->get('remember_domain', FALSE),
+      '#description' => $this->t("Keeps last selected Domain for next configuration pages."),
+    ];
+    $form['allowed'] = [
       '#type' => 'textarea',
       '#rows' => 5,
       '#columns' => 40,
       '#title' => $this->t('Include Domain Config UI switcher in the following pages'),
       '#default_value' => $config->get('allowed', "/admin/appearance\r\n/admin/config/system/site-information"),
       '#description' => $this->t("Enter any paths where you wan't the Domain Config UI switcher displayed. One path per line."),
-    );
+    ];
     return parent::buildForm($form, $form_state);
   }
 
@@ -44,9 +50,14 @@ class SettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
+    // Clean session values.
+    unset($_SESSION['domain_config_ui_domain']);
+    unset($_SESSION['domain_config_ui_language']);
     $this->config('domain_config_ui.settings')
+      ->set('remember_domain', $form_state->getValue('remember_domain'))
       ->set('allowed', $form_state->getValue('allowed'))
       ->save();
     parent::submitForm($form, $form_state);
   }
+
 }

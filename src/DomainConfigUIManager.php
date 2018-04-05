@@ -2,10 +2,29 @@
 
 namespace Drupal\domain_config_ui;
 
+use Symfony\Component\HttpFoundation\RequestStack;
+
 /**
  * Domain Config UI manager.
  */
 class DomainConfigUIManager {
+
+  /**
+   * A RequestStack instance.
+   *
+   * @var \Symfony\Component\HttpFoundation\Request
+   */
+  protected $request;
+
+  /**
+   * Constructs DomainConfigUIManager object.
+   *
+   * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
+   *   The request stack.
+   */
+  public function __construct(RequestStack $request_stack) {
+    $this->request = $request_stack->getCurrentRequest();
+  }
 
   /**
    * Get selected config name.
@@ -14,11 +33,13 @@ class DomainConfigUIManager {
    *   The config name.
    */
   public function getSelectedConfigName($name) {
-    // Build prefix and add to front of existing key.
-    $prefix = 'domain.config.' . $this->getSelectedDomainId() . '.';
-    // Add selected language.
-    $prefix .= $this->getSelectedLanguageId() . '.';
-    $name = $prefix . $name;
+    if ($domain_id = $this->getSelectedDomainId()) {
+      $prefix = "domain.config.{$domain_id}.";
+      if ($langcode = $this->getSelectedLanguageId()) {
+        $prefix .= "{$langcode}.";
+      }
+      return $prefix . $name;
+    }
     return $name;
   }
 
@@ -26,36 +47,24 @@ class DomainConfigUIManager {
    * Get the selected domain ID.
    */
   public function getSelectedDomainId() {
-    return !empty($_SESSION['domain_config_ui']['config_save_domain']) ? $_SESSION['domain_config_ui']['config_save_domain'] : '';
-  }
-
-  /**
-   * Set the current selected domain ID.
-   *
-   * @param string $domain_id
-   *   The Domain ID.
-   */
-  public function setSelectedDomainId($domain_id) {
-    // Set session for subsequent request.
-    $_SESSION['domain_config_ui']['config_save_domain'] = $domain_id;
+    if ($domain = $this->request->get('domain_config_ui_domain')) {
+      return $domain;
+    }
+    if (isset($_SESSION['domain_config_ui_domain'])) {
+      return $_SESSION['domain_config_ui_domain'];
+    }
   }
 
   /**
    * Get the selected language ID.
    */
   public function getSelectedLanguageId() {
-    return !empty($_SESSION['domain_config_ui']['config_save_language']) ? $_SESSION['domain_config_ui']['config_save_language'] : '';
-  }
-
-  /**
-   * Set the selected language.
-   *
-   * @param string $language_id
-   *   The language ID.
-   */
-  public function setSelectedLanguageId($language_id) {
-    // Set session for subsequent request.
-    $_SESSION['domain_config_ui']['config_save_language'] = $language_id;
+    if ($domain = $this->request->get('domain_config_ui_language')) {
+      return $domain;
+    }
+    if (isset($_SESSION['domain_config_ui_language'])) {
+      return $_SESSION['domain_config_ui_language'];
+    }
   }
 
 }

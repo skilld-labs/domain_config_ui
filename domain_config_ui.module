@@ -5,9 +5,6 @@
  * Allows saving of domain specific configuration through the UI.
  */
 
-use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Ajax\AjaxResponse;
-use Drupal\Core\Ajax\ReplaceCommand;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Component\Render\FormattableMarkup;
 

@@ -84,7 +84,7 @@ class SwitchForm extends FormBase {
     // Add domain switch select field.
     $selected_domain_id = $this->domainConfigUiManager->getSelectedDomainId();
     $selected_domain = $this->domainStorage->load($selected_domain_id);
-    $form['domain_config_ui']['config_save_domain'] = [
+    $form['domain_config_ui']['domain'] = [
       '#type' => 'select',
       '#title' => 'Domain',
       '#options' => array_merge(['' => 'All Domains'], $this->domainStorage->loadOptionsList()),
@@ -99,7 +99,7 @@ class SwitchForm extends FormBase {
     foreach ($this->languageManager->getLanguages() as $id => $language) {
       $language_options[$id] = $language->getName();
     }
-    $form['domain_config_ui']['config_save_language'] = [
+    $form['domain_config_ui']['language'] = [
       '#type' => 'select',
       '#title' => 'Language',
       '#options' => $language_options,
@@ -128,14 +128,6 @@ class SwitchForm extends FormBase {
    *   The form state array.
    */
   public static function switchCallback(array &$form, FormStateInterface $form_state) {
-    // Switch the current domain.
-    \Drupal::service('domain_config_ui.manager')
-      ->setSelectedDomainId($form_state->getValue('config_save_domain'));
-
-    // Switch the current language.
-    \Drupal::service('domain_config_ui.manager')
-      ->setSelectedLanguageId($form_state->getValue('config_save_language'));
-
     // Extract requesting page URI from ajax URI.
     // Copied from Drupal\Core\Form\FormBuilder::buildFormAction().
     $request = \Drupal::service('request_stack')->getMasterRequest();
@@ -149,6 +141,18 @@ class SwitchForm extends FormBase {
 
     $parsed = UrlHelper::parse($request_uri);
     unset($parsed['query']['ajax_form'], $parsed['query'][MainContentViewSubscriber::WRAPPER_FORMAT]);
+
+    if (\Drupal::config('domain_config_ui.settings')->get('remember_domain')) {
+      // Save domain and language on session.
+      $_SESSION['domain_config_ui_domain'] = $form_state->getValue('domain');
+      $_SESSION['domain_config_ui_language'] = $form_state->getValue('language');
+    }
+    else {
+      // Pass domain and language as request query parameters.
+      $parsed['query']['domain_config_ui_domain'] = $form_state->getValue('domain');
+      $parsed['query']['domain_config_ui_language'] = $form_state->getValue('language');
+    }
+
     $request_uri = $parsed['path'] . ($parsed['query'] ? ('?' . UrlHelper::buildQuery($parsed['query'])) : '');
 
     // Reload the page to get new form values.
