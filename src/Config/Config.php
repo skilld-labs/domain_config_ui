@@ -3,35 +3,27 @@
 namespace Drupal\domain_config_ui\Config;
 
 use Drupal\Core\Config\Config as CoreConfig;
-use Drupal\domain\DomainNegotiatorInterface;
+use Drupal\domain_config_ui\DomainConfigUIManager;
 
 /**
  * Extend core Config class to save domain specific configuration.
  */
 class Config extends CoreConfig {
   /**
-   * List of config that should always be saved globally.
-   * Use * for wildcards.
-   */
-  protected $disallowedConfig = [
-    'core.extension',
-    'domain.record.*',
-    'domain_alias.*',
-  ];
-
-  /**
-   * The Domain negotiator.
+   * The Domain config UI manager.
    *
-   * @var \Drupal\domain\DomainNegotiatorInterface
+   * @var \Drupal\domain_config_ui\DomainConfigUIManager
    */
-  protected $domainNegotiator;
+  protected $domainConfigUIManager;
 
   /**
-   * Set the Domain negotiator.
-   * @param DomainNegotiatorInterface $domain_negotiator
+   * Set the Domain config UI manager.
+   *
+   * @param \Drupal\domain_config_ui\DomainConfigUIManager $domain_config_ui_manager
+   *   The Domain config UI manager.
    */
-  public function setDomainNegotiator(DomainNegotiatorInterface $domain_negotiator) {
-    $this->domainNegotiator = $domain_negotiator;
+  public function setDomainConfigUiManager(DomainConfigUIManager $domain_config_ui_manager) {
+    $this->domainConfigUIManager = $domain_config_ui_manager;
   }
 
   /**
@@ -45,8 +37,8 @@ class Config extends CoreConfig {
       // Get domain config name for saving.
       $domainConfigName = $this->getDomainConfigName();
 
-      // If config is new and we are currently saving domain specific configuration,
-      // save with original name first so that there is always a default configuration.
+      // If config is new and we are saving domain specific configuration,
+      // save with original name so there is always a default configuration.
       if ($this->isNew && $domainConfigName != $originalName) {
         parent::save($has_trusted_data);
       }
@@ -71,31 +63,8 @@ class Config extends CoreConfig {
    * Get the domain config name.
    */
   protected function getDomainConfigName() {
-    $disallowed = $this->disallowedConfig;
-    // Get default disallowed config and allow other modules to alter.
-    \Drupal::moduleHandler()->alter('domain_config_disallowed', $disallowed);
-
-    // Return original name if reserved as global configuration.
-    foreach ($disallowed as $config_name) {
-      // Convert config_name into into regex.
-      // Escapes regex syntax, but keeps * wildcards.
-      $pattern = '/^' . str_replace('\*', '.*', preg_quote($config_name, '/')) . '$/';
-      if (preg_match($pattern, $this->name)) {
-        return $this->name;
-      }
-    }
-
-    // Build prefix and add to front of existing key.
-    if ($selected_domain = $this->domainNegotiator->getSelectedDomain()) {
-      $prefix = 'domain.config.' . $selected_domain->id() . '.';
-      // @TODO: Allow selection of language.
-      if ($language = \Drupal::languageManager()->getCurrentLanguage()) {
-        $prefix .= $language->getId() . '.';
-      }
-      return $prefix . $this->name;
-    }
-
-    // Return current name by default.
-    return $this->name;
+    // Return selected config name.
+    return $this->domainConfigUIManager->getSelectedConfigName($this->name);
   }
+
 }

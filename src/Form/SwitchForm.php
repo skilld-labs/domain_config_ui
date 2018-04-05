@@ -1,132 +1,160 @@
 <?php
+
 namespace Drupal\domain_config_ui\Form;
 
+use Drupal\Component\Utility\UrlHelper;
+use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\RedirectCommand;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\EventSubscriber\MainContentViewSubscriber;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Url;
-use Drupal\domain\DomainLoaderInterface;
-use Drupal\domain\DomainNegotiatorInterface;
-use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Language\LanguageManagerInterface;
+use Drupal\domain_config_ui\DomainConfigUIManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\HttpFoundation\Request;
 
+/**
+ * Class SwitchForm.
+ */
 class SwitchForm extends FormBase {
-  /**
-   * The Domain negotiator.
-   *
-   * @var \Drupal\domain\DomainNegotiatorInterface
-   */
-  protected $domainNegotiator;
 
   /**
-   * The domain loader.
+   * Constructs a new DevelGenerateForm object.
    *
-   * @var \Drupal\domain\DomainLoaderInterface
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager.
+   * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
+   *   The language manager.
+   * @param \Drupal\domain_config_ui\DomainConfigUIManager $domain_config_ui_manager
+   *   The domain config UI manager.
    */
-  protected $domainLoader;
-
-  /**
-   * Class constructor.
-   *
-   * @param DomainNegotiatorInterface $domain_negotiator
-   *   The Domain negotiator.
-   * @param DomainLoaderInterface $domain_loader
-   *   The domain loader.
-   */
-  public function __construct(DomainNegotiatorInterface $domain_negotiator, DomainLoaderInterface $domain_loader) {
-    // Set the Domain negotiator.
-    $this->domainNegotiator = $domain_negotiator;
-    $this->domainLoader = $domain_loader;
+  public function __construct(EntityTypeManagerInterface $entity_type_manager,
+    LanguageManagerInterface $language_manager,
+    DomainConfigUIManager $domain_config_ui_manager) {
+    $this->domainConfigUiManager = $domain_config_ui_manager;
+    $this->languageManager = $language_manager;
+    $this->entityTypeManager = $entity_type_manager;
+    $this->domainStorage = $this->entityTypeManager->getStorage('domain');
   }
 
   /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
-    // Instantiates this form class with negotiator.
     return new static(
-      $container->get('domain.negotiator'),
-      $container->get('domain.loader')
+      $container->get('entity_type.manager'),
+      $container->get('language_manager'),
+      $container->get('domain_config_ui.manager')
     );
   }
 
   /**
-   * {@inheritDoc}
+   * {@inheritdoc}
    */
   public function getFormId() {
     return 'domain_config_ui_switch_form';
   }
 
   /**
-   * {@inheritDoc}
+   * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, Request $request = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     // Only allow access to domain administrators.
     $form['#access'] = $this->currentUser()->hasPermission('administer domains');
+    $form = $this->addSwitchFields($form, $form_state);
+    return $form;
+  }
 
-    // Fill current request path.
-    if ($request) {
-      $path = $request->getPathInfo();
-      $form['current_path'] = [
-        '#type' => 'value',
-        '#value' => $path,
-      ];
-    }
+  /**
+   * Helper to add switch fields to form.
+   *
+   * @param array $form
+   *   The form array.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state array.
+   */
+  public function addSwitchFields(array $form, FormStateInterface $form_state) {
+    // Create fieldset to group domain fields.
+    $form['domain_config_ui'] = [
+      '#type' => 'fieldset',
+      '#title' => 'Domain Configuration',
+      '#weight' => -10,
+    ];
 
     // Add domain switch select field.
-    if ($selected_domain = $this->domainNegotiator->getSelectedDomain()) {
-      $selected = $selected_domain->id();
-    }
-    else {
-      $selected = $form_state->getValue('config_save_domain');
-    }
-    $form['config_save_domain'] = array(
+    $selected_domain_id = $this->domainConfigUiManager->getSelectedDomainId();
+    $selected_domain = $this->domainStorage->load($selected_domain_id);
+    $form['domain_config_ui']['config_save_domain'] = [
       '#type' => 'select',
-      '#title' => 'Save config for:',
-      '#options' => array_merge(['' => 'All Domains'], $this->domainLoader->loadOptionsList()),
-      '#default_value' => $selected,
-      '#ajax' => array(
+      '#title' => 'Domain',
+      '#options' => array_merge(['' => 'All Domains'], $this->domainStorage->loadOptionsList()),
+      '#default_value' => $selected_domain ? $selected_domain->id() : '',
+      '#ajax' => [
         'callback' => '::switchCallback',
-      ),
-    );
+      ],
+    ];
 
-    // Attach CSS to position form.
-    $form['#attached']['library'][] = 'domain_config_ui/drupal.domain_config_ui.admin';
+    // Add language select field.
+    $language_options = ['' => 'Default'];
+    foreach ($this->languageManager->getLanguages() as $id => $language) {
+      $language_options[$id] = $language->getName();
+    }
+    $form['domain_config_ui']['config_save_language'] = [
+      '#type' => 'select',
+      '#title' => 'Language',
+      '#options' => $language_options,
+      '#default_value' => $this->domainConfigUiManager->getSelectedLanguageId(),
+      '#ajax' => [
+        'callback' => '::switchCallback',
+      ],
+    ];
 
     return $form;
   }
 
   /**
-   * {@inheritDoc}
+   * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     // Form does not require submit handler.
   }
 
   /**
-   * Callback to remember save mode.
+   * Callback to remember save mode and reload page.
    *
    * @param array $form
    *   The form array.
-   * @param FormStateInterface $form_state
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The form state array.
-   *
-   * @return AjaxResponse
-   *   The response.
    */
-  public function switchCallback(array &$form, FormStateInterface $form_state) {
-    $this->domainNegotiator->setSelectedDomain($form_state->getValue('config_save_domain'));
-    $response = new AjaxResponse();
-    // Refresh the page after changing the domain.
-    $path = $form['current_path']['#value'];
-    if ($path != '') {
-      $url = Url::fromUri('base:' . $path);
-      $url->setAbsolute();
-      $response->addCommand(new RedirectCommand($url->toString()));
+  public static function switchCallback(array &$form, FormStateInterface $form_state) {
+    // Switch the current domain.
+    \Drupal::service('domain_config_ui.manager')
+      ->setSelectedDomainId($form_state->getValue('config_save_domain'));
+
+    // Switch the current language.
+    \Drupal::service('domain_config_ui.manager')
+      ->setSelectedLanguageId($form_state->getValue('config_save_language'));
+
+    // Extract requesting page URI from ajax URI.
+    // Copied from Drupal\Core\Form\FormBuilder::buildFormAction().
+    $request = \Drupal::service('request_stack')->getMasterRequest();
+    $request_uri = $request->getRequestUri();
+
+    // Prevent cross site requests via the Form API by using an absolute URL
+    // when the request uri starts with multiple slashes.
+    if (strpos($request_uri, '//') === 0) {
+      $request_uri = $request->getUri();
     }
+
+    $parsed = UrlHelper::parse($request_uri);
+    unset($parsed['query']['ajax_form'], $parsed['query'][MainContentViewSubscriber::WRAPPER_FORMAT]);
+    $request_uri = $parsed['path'] . ($parsed['query'] ? ('?' . UrlHelper::buildQuery($parsed['query'])) : '');
+
+    // Reload the page to get new form values.
+    $response = new AjaxResponse();
+    $response->addCommand(new RedirectCommand($request_uri));
     return $response;
   }
 
 }
-
