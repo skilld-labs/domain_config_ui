@@ -61,12 +61,13 @@ function domain_config_ui_save_warning_message() {
  * Checks if provided path should have a domain switch form on top of the page.
  *
  * @return bool
- *   TRUE if domai switch should be added. Otherwise, FALSE.
+ *   TRUE if domain switch should be added. Otherwise, FALSE.
  */
 function domain_config_ui_route_is_allowed() {
-  $allowed = \Drupal::config('domain_config_ui.settings')->get('allowed');
+  $path_pages = \Drupal::config('domain_config_ui.settings')->get('path_pages');
+  $path_negate = \Drupal::config('domain_config_ui.settings')->get('path_negate');
   $route = \Drupal::routeMatch()->getRouteObject();
-  return \Drupal::service('path.matcher')->matchPath($route->getPath(), $allowed);
+  return !$path_negate === \Drupal::service('path.matcher')->matchPath($route->getPath(), $path_pages);
 }
 
 /**

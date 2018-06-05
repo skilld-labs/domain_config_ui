@@ -35,13 +35,21 @@ class SettingsForm extends ConfigFormBase {
       '#default_value' => $config->get('remember_domain', FALSE),
       '#description' => $this->t("Keeps last selected Domain for next configuration pages."),
     ];
-    $form['allowed'] = [
+    $form['path_pages'] = [
       '#type' => 'textarea',
       '#rows' => 5,
       '#columns' => 40,
-      '#title' => $this->t('Include Domain Config UI switcher in the following pages'),
-      '#default_value' => $config->get('allowed', "/admin/appearance\r\n/admin/config/system/site-information"),
-      '#description' => $this->t("Enter any paths where you wan't the Domain Config UI switcher displayed. One path per line."),
+      '#title' => $this->t('Pages'),
+      '#default_value' => $config->get('path_pages', "/admin/appearance\r\n/admin/config/system/site-information"),
+      '#description' => $this->t("Specify pages by using their paths. Enter one path per line. The '*' character is a wildcard."),
+    ];
+    $form['path_negate'] = [
+      '#type' => 'radios',
+      '#options' => [
+        $this->t('Show for the listed pages'),
+        $this->t('Hide for the listed pages'),
+      ],
+      '#default_value' => $config->get('path_negate', 0),
     ];
     return parent::buildForm($form, $form_state);
   }
@@ -55,7 +63,8 @@ class SettingsForm extends ConfigFormBase {
     unset($_SESSION['domain_config_ui_language']);
     $this->config('domain_config_ui.settings')
       ->set('remember_domain', $form_state->getValue('remember_domain'))
-      ->set('allowed', $form_state->getValue('allowed'))
+      ->set('path_pages', $form_state->getValue('path_pages'))
+      ->set('path_negate', $form_state->getValue('path_negate'))
       ->save();
     parent::submitForm($form, $form_state);
   }
