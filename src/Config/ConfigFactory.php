@@ -23,6 +23,7 @@ class ConfigFactory extends CoreConfigFactory {
     '*.theme.*',
     '*.settings',
     'node.settings',
+    'swiftmailer.*',
   ];
 
   /**
