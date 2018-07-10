@@ -46,24 +46,24 @@ class DomainConfigUIOverrider extends DomainConfigOverrider {
     }
 
     foreach ($names as $name) {
-      $config_name = $this->getDomainConfigUiName($name);
+      if ($config_name = $this->getDomainConfigUiName($name)) {
+        // Check to see if the config storage has an appropriately named file
+        // containing override data.
+        if ($override = $this->storage->read($config_name['langcode'])) {
+          $overrides[$name] = $override;
+        }
+        // Check to see if we have a file without a specific language.
+        elseif ($override = $this->storage->read($config_name['domain'])) {
+          $overrides[$name] = $override;
+        }
 
-      // Check to see if the config storage has an appropriately named file
-      // containing override data.
-      if ($override = $this->storage->read($config_name['langcode'])) {
-        $overrides[$name] = $override;
-      }
-      // Check to see if we have a file without a specific language.
-      elseif ($override = $this->storage->read($config_name['domain'])) {
-        $overrides[$name] = $override;
-      }
-
-      // Apply any settings.php overrides.
-      if (isset($GLOBALS['config'][$config_name['langcode']])) {
-        $overrides[$name] = $GLOBALS['config'][$config_name['langcode']];
-      }
-      elseif (isset($GLOBALS['config'][$config_name['domain']])) {
-        $overrides[$name] = $GLOBALS['config'][$config_name['domain']];
+        // Apply any settings.php overrides.
+        if (isset($GLOBALS['config'][$config_name['langcode']])) {
+          $overrides[$name] = $GLOBALS['config'][$config_name['langcode']];
+        }
+        elseif (isset($GLOBALS['config'][$config_name['domain']])) {
+          $overrides[$name] = $GLOBALS['config'][$config_name['domain']];
+        }
       }
     }
     return $overrides;
@@ -73,10 +73,25 @@ class DomainConfigUIOverrider extends DomainConfigOverrider {
    * {@inheritdoc}
    */
   protected function getDomainConfigUiName($name) {
-    return [
-      'langcode' => 'domain.config.' . $this->domainConfigUIManager->getSelectedDomainId() . '.' . $this->domainConfigUIManager->getSelectedLanguageId() . '.' . $name,
-      'domain' => 'domain.config.' . $this->domainConfigUIManager->getSelectedDomainId() . '.' . $name,
-    ];
+    if ($this->domainConfigUIManager->getSelectedDomainId()) {
+      $domain_id = $this->domainConfigUIManager->getSelectedDomainId();
+      $language_id = $this->domainConfigUIManager->getSelectedDomainId();
+      return [
+        'langcode' => $language_id ? "domain.config.{$domain_id}.{$language_id}.{$name}"
+        : "domain.config.{$domain_id}.{$name}",
+        'domain' => "domain.config.{$domain_id}.{$name}",
+      ];
+    }
+    elseif (!empty($this->domain)) {
+      $domain_id = $this->domain->id();
+      $language_id = $this->language->getId();
+      return [
+        'langcode' => $language_id ? "domain.config.{$domain_id}.{$language_id}.{$name}"
+        : "domain.config.{$domain_id}.{$name}",
+        'domain' => "domain.config.{$domain_id}.{$name}",
+      ];
+    }
+    return FALSE;
   }
 
   /**
