@@ -11,3 +11,9 @@ services:
       - { name: event_subscriber }
       - { name: service_collector, tag: 'config.factory.override', call: addOverride }
     arguments: ['@config.storage', '@event_dispatcher', '@config.typed', '@domain_config_ui.manager']
+
+  domain_config_ui.overrider:
+    class: Drupal\domain_config_ui\DomainConfigUIOverrider
+    decorates: domain_config.overrider
+    decoration_priority: 1
+    arguments: ['@config.storage', '@domain_config_ui.manager']
