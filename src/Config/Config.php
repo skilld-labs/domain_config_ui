@@ -27,6 +27,14 @@ class Config extends CoreConfig {
   }
 
   /**
+   * Get the domain config name.
+   */
+  protected function getDomainConfigName() {
+    // Return selected config name.
+    return $this->domainConfigUIManager->getSelectedConfigName($this->name);
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function save($has_trusted_data = FALSE) {
@@ -57,14 +65,6 @@ class Config extends CoreConfig {
     $this->name = $originalName;
 
     return $this;
-  }
-
-  /**
-   * Get the domain config name.
-   */
-  protected function getDomainConfigName() {
-    // Return selected config name.
-    return $this->domainConfigUIManager->getSelectedConfigName($this->name);
   }
 
 }
