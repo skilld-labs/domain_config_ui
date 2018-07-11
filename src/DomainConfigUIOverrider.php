@@ -75,7 +75,7 @@ class DomainConfigUIOverrider extends DomainConfigOverrider {
   protected function getDomainConfigUiName($name) {
     if ($this->domainConfigUIManager->getSelectedDomainId()) {
       $domain_id = $this->domainConfigUIManager->getSelectedDomainId();
-      $language_id = $this->domainConfigUIManager->getSelectedDomainId();
+      $language_id = $this->domainConfigUIManager->getSelectedLanguageId();
       return [
         'langcode' => $language_id ? "domain.config.{$domain_id}.{$language_id}.{$name}"
         : "domain.config.{$domain_id}.{$name}",
