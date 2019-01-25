@@ -29,27 +29,30 @@ class SettingsForm extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config('domain_config_ui.settings');
+    // @TODO: Should this be an option to remember or load the current domain?
     $form['remember_domain'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Remember Domain'),
-      '#default_value' => $config->get('remember_domain', FALSE),
+      '#default_value' => $config->get('remember_domain'),
       '#description' => $this->t("Keeps last selected Domain for next configuration pages."),
     ];
+    // @TODO: Determine what core paths are safe defaults.
     $form['path_pages'] = [
       '#type' => 'textarea',
       '#rows' => 5,
       '#columns' => 40,
       '#title' => $this->t('Pages'),
-      '#default_value' => $config->get('path_pages', "/admin/appearance\r\n/admin/config/system/site-information"),
+      '#default_value' => $config->get('path_pages'),
       '#description' => $this->t("Specify pages by using their paths. Enter one path per line. The '*' character is a wildcard."),
     ];
+    // @TODO: Documentation
     $form['path_negate'] = [
       '#type' => 'radios',
       '#options' => [
         $this->t('Show for the listed pages'),
         $this->t('Hide for the listed pages'),
       ],
-      '#default_value' => $config->get('path_negate', 0),
+      '#default_value' => $config->get('path_negate'),
     ];
     return parent::buildForm($form, $form_state);
   }

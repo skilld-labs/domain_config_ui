@@ -9,6 +9,7 @@ use Drupal\domain_config_ui\DomainConfigUIManager;
  * Extend core Config class to save domain specific configuration.
  */
 class Config extends CoreConfig {
+
   /**
    * The Domain config UI manager.
    *
@@ -24,14 +25,6 @@ class Config extends CoreConfig {
    */
   public function setDomainConfigUiManager(DomainConfigUIManager $domain_config_ui_manager) {
     $this->domainConfigUIManager = $domain_config_ui_manager;
-  }
-
-  /**
-   * Get the domain config name.
-   */
-  protected function getDomainConfigName() {
-    // Return selected config name.
-    return $this->domainConfigUIManager->getSelectedConfigName($this->name);
   }
 
   /**
@@ -65,6 +58,14 @@ class Config extends CoreConfig {
     $this->name = $originalName;
 
     return $this;
+  }
+
+  /**
+   * Get the domain config name.
+   */
+  protected function getDomainConfigName() {
+    // Return selected config name.
+    return $this->domainConfigUIManager->getSelectedConfigName($this->name);
   }
 
 }

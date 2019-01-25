@@ -10,6 +10,7 @@ use Drupal\Core\EventSubscriber\MainContentViewSubscriber;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
+use Drupal\domain\DomainElementManagerInterface;
 use Drupal\domain_config_ui\DomainConfigUIManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -27,14 +28,15 @@ class SwitchForm extends FormBase {
    *   The language manager.
    * @param \Drupal\domain_config_ui\DomainConfigUIManager $domain_config_ui_manager
    *   The domain config UI manager.
+   * @param \Drupal\domain\DomainElementManagerInterface $domain_element_manager
+   *   The domain field element manager.
    */
-  public function __construct(EntityTypeManagerInterface $entity_type_manager,
-    LanguageManagerInterface $language_manager,
-    DomainConfigUIManager $domain_config_ui_manager) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, LanguageManagerInterface $language_manager, DomainConfigUIManager $domain_config_ui_manager, DomainElementManagerInterface $domain_element_manager) {
     $this->domainConfigUiManager = $domain_config_ui_manager;
     $this->languageManager = $language_manager;
     $this->entityTypeManager = $entity_type_manager;
     $this->domainStorage = $this->entityTypeManager->getStorage('domain');
+    $this->domainElementManager = $domain_element_manager;
   }
 
   /**
@@ -44,7 +46,8 @@ class SwitchForm extends FormBase {
     return new static(
       $container->get('entity_type.manager'),
       $container->get('language_manager'),
-      $container->get('domain_config_ui.manager')
+      $container->get('domain_config_ui.manager'),
+      $container->get('domain.element_manager')
     );
   }
 
@@ -60,9 +63,24 @@ class SwitchForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     // Only allow access to domain administrators.
-    $form['#access'] = $this->currentUser()->hasPermission('administer domains');
+    $form['#access'] = $this->canUseDomainConfig();
     $form = $this->addSwitchFields($form, $form_state);
     return $form;
+  }
+
+  /**
+   * Determines is a user may access the domain-sensitive form.
+   */
+  public function canUseDomainConfig() {
+    if ($this->currentUser()->hasPermission('administer domains')) {
+      $user_domains = 'all';
+    }
+    else {
+      $account = $this->currentUser();
+      $user = $this->entityTypeManager->getStorage('user')->load($account->id());
+      $user_domains = $this->domainElementManager->getFieldValues($user, DOMAIN_ADMIN_FIELD);
+    }
+    return (!empty($user_domains) && $this->currentUser()->hasPermission('use domain config ui'));
   }
 
   /**
@@ -82,33 +100,40 @@ class SwitchForm extends FormBase {
     ];
 
     // Add domain switch select field.
-    $selected_domain_id = $this->domainConfigUiManager->getSelectedDomainId();
+    if ($selected_domain_id = $this->domainConfigUiManager->getSelectedDomainId()) {
     $selected_domain = $this->domainStorage->load($selected_domain_id);
+    }
+    // @TODO: Restrict the domain list to specific domains.
+    // @TODO: Decide who can set values for 'all domains'.
+    // @TODO: Save for all but overridden but hidden?
+    // @TODO: Should 'all domains' be 'all assigned domains'?
     $form['domain_config_ui']['domain'] = [
       '#type' => 'select',
-      '#title' => 'Domain',
-      '#options' => array_merge(['' => 'All Domains'], $this->domainStorage->loadOptionsList()),
-      '#default_value' => $selected_domain ? $selected_domain->id() : '',
+      '#title' => $this->t('Domain'),
+      '#options' => array_merge(['' => $this->t('All Domains')], $this->domainStorage->loadOptionsList()),
+      '#default_value' => !empty($selected_domain) ? $selected_domain->id() : '',
       '#ajax' => [
         'callback' => '::switchCallback',
       ],
     ];
 
     // Add language select field.
-    $language_options = ['' => 'Default'];
-    foreach ($this->languageManager->getLanguages() as $id => $language) {
+    $language_options = ['' => $this->t('Default')];
+    $languages = $this->languageManager->getLanguages();
+    if (count($languages) > 1) {
+      foreach ($languages as $id => $language) {
       $language_options[$id] = $language->getName();
     }
     $form['domain_config_ui']['language'] = [
       '#type' => 'select',
-      '#title' => 'Language',
+        '#title' => $this->t('Language'),
       '#options' => $language_options,
       '#default_value' => $this->domainConfigUiManager->getSelectedLanguageId(),
       '#ajax' => [
         'callback' => '::switchCallback',
       ],
     ];
-
+    }
     return $form;
   }
 

@@ -14,6 +14,22 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 class ConfigFactory extends CoreConfigFactory {
 
   /**
+   * List of config that should always be saved globally. Use * for wildcards.
+   *
+   * @TODO: Document the logic of this list.
+   *
+   * @var array
+   */
+  protected $allowedDomainConfig = [
+    'system.site',
+    'system.theme*',
+    '*.theme.*',
+    '*.settings',
+    'node.settings',
+    'swiftmailer.*', // @TODO: Non-core items to be removed.
+  ];
+
+  /**
    * The Domain config UI manager.
    *
    * @var Drupal\domain_config_ui\DomainConfigUIManager
@@ -41,17 +57,47 @@ class ConfigFactory extends CoreConfigFactory {
   }
 
   /**
+   * Helper to check if config is allowed to be saved for domain.
+   *
+   * @param string $name
+   *   The configuration name.
+   */
+  protected function isAllowedDomainConfig(string $name) {
+    // Return original name if reserved not allowed.
+    $is_allowed = FALSE;
+    foreach ($this->allowedDomainConfig as $config_name) {
+      // Convert config_name into into regex.
+      // Escapes regex syntax, but keeps * wildcards.
+      $pattern = '/^' . str_replace('\*', '.*', preg_quote($config_name, '/')) . '$/';
+      if (preg_match($pattern, $name)) {
+        $is_allowed = TRUE;
+      }
+    }
+
+    return $is_allowed;
+  }
+
+  /**
    * {@inheritdoc}
    */
   protected function createConfigObject($name, $immutable) {
-    if ($immutable) {
-      $config = new ImmutableConfig($name, $this->storage, $this->eventDispatcher, $this->typedConfigManager);
-    }
-    else {
+    if (!$immutable && $this->isAllowedDomainConfig($name)) {
       $config = new Config($name, $this->storage, $this->eventDispatcher, $this->typedConfigManager);
-    }
+      // Pass the UI manager to the Config object.
     $config->setDomainConfigUiManager($this->domainConfigUIManager);
     return $config;
+  }
+    return parent::createConfigObject($name, $immutable);
+  }
+
+  /**
+   * Set the Domain config UI manager.
+   *
+   * @param \Drupal\domain_config_ui\DomainConfigUIManager $domain_config_ui_manager
+   *   The Domain config UI manager.
+   */
+  public function setDomainConfigUiManager(DomainConfigUIManager $domain_config_ui_manager) {
+    $this->domainConfigUIManager = $domain_config_ui_manager;
   }
 
   /**
@@ -60,6 +106,14 @@ class ConfigFactory extends CoreConfigFactory {
   protected function doLoadMultiple(array $names, $immutable = TRUE) {
     // Let parent load multiple load as usual.
     $list = parent::doLoadMultiple($names, $immutable);
+
+    // Do not override if configuring 'all' domains or config is immutable.
+    // @TODO: This will need to change if we allow saving for 'all allowed domains'
+    if (empty($this->domainConfigUIManager)
+      || !$this->domainConfigUIManager->getSelectedDomainId()
+      || !$this->isAllowedDomainConfig(current($names))) {
+      return $list;
+    }
 
     // Pre-load remaining configuration files.
     if (!empty($names)) {
@@ -70,7 +124,7 @@ class ConfigFactory extends CoreConfigFactory {
       // Load module overrides so that domain config is loaded in admin forms.
       if (!empty($storage_data)) {
         // Only get domain overrides if we have configuration to override.
-        $module_overrides = $this->loadOverrides($names);
+        $module_overrides = $this->loadDomainOverrides($names);
       }
 
       foreach ($storage_data as $name => $data) {
@@ -80,6 +134,7 @@ class ConfigFactory extends CoreConfigFactory {
           $this->cache[$cache_key]->setModuleOverride($module_overrides[$name]);
           $list[$name] = $this->cache[$cache_key];
         }
+
         $this->propagateConfigOverrideCacheability($cache_key, $name);
       }
     }
@@ -91,8 +146,8 @@ class ConfigFactory extends CoreConfigFactory {
    * {@inheritdoc}
    */
   protected function doGet($name, $immutable = TRUE) {
-    // If config for 'all' domains.
-    if (empty($this->domainConfigUIManager) || !$this->domainConfigUIManager->getSelectedDomainId()) {
+    // If config for 'all' domains or immutable then don't override config.
+    if (empty($this->domainConfigUIManager) || !$this->domainConfigUIManager->getSelectedDomainId() || !$this->isAllowedDomainConfig($name)) {
       return parent::doGet($name, $immutable);
     }
 
@@ -105,7 +160,7 @@ class ConfigFactory extends CoreConfigFactory {
       $config = $this->createConfigObject($name, $immutable);
 
       // Load domain overrides so domain config is loaded in admin forms.
-      $overrides = $this->loadOverrides([$name]);
+      $overrides = $this->loadDomainOverrides([$name]);
       if (isset($overrides[$name])) {
         $config->setModuleOverride($overrides[$name]);
       }
@@ -116,6 +171,26 @@ class ConfigFactory extends CoreConfigFactory {
 
       return $config;
     }
+  }
+
+  /**
+   * Get Domain module overrides for the named configuration objects.
+   *
+   * @param array $names
+   *   The names of the configuration objects to get overrides for.
+   *
+   * @return array
+   *   An array of overrides keyed by the configuration object name.
+   */
+  protected function loadDomainOverrides(array $names) {
+    $overrides = [];
+    foreach ($names as $name) {
+      $config_name = $this->domainConfigUIManager->getSelectedConfigName($name);
+      if ($override = $this->storage->read($config_name)) {
+        $overrides[$name] = $override;
+      }
+    }
+    return $overrides;
   }
 
 }
