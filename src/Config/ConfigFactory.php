@@ -16,9 +16,9 @@ class ConfigFactory extends CoreConfigFactory {
   /**
    * List of config that should always be saved globally. Use * for wildcards.
    *
-   * @TODO: Document the logic of this list.
-   *
    * @var array
+   *
+   * @TODO: Document the logic of this list.
    */
   protected $allowedDomainConfig = [
     'system.site',
@@ -26,7 +26,6 @@ class ConfigFactory extends CoreConfigFactory {
     '*.theme.*',
     '*.settings',
     'node.settings',
-    'swiftmailer.*', // @TODO: Non-core items to be removed.
   ];
 
   /**
@@ -84,9 +83,9 @@ class ConfigFactory extends CoreConfigFactory {
     if (!$immutable && $this->isAllowedDomainConfig($name)) {
       $config = new Config($name, $this->storage, $this->eventDispatcher, $this->typedConfigManager);
       // Pass the UI manager to the Config object.
-    $config->setDomainConfigUiManager($this->domainConfigUIManager);
-    return $config;
-  }
+      $config->setDomainConfigUiManager($this->domainConfigUIManager);
+      return $config;
+    }
     return parent::createConfigObject($name, $immutable);
   }
 

@@ -101,7 +101,7 @@ class SwitchForm extends FormBase {
 
     // Add domain switch select field.
     if ($selected_domain_id = $this->domainConfigUiManager->getSelectedDomainId()) {
-    $selected_domain = $this->domainStorage->load($selected_domain_id);
+      $selected_domain = $this->domainStorage->load($selected_domain_id);
     }
     // @TODO: Restrict the domain list to specific domains.
     // @TODO: Decide who can set values for 'all domains'.
@@ -122,17 +122,17 @@ class SwitchForm extends FormBase {
     $languages = $this->languageManager->getLanguages();
     if (count($languages) > 1) {
       foreach ($languages as $id => $language) {
-      $language_options[$id] = $language->getName();
-    }
-    $form['domain_config_ui']['language'] = [
-      '#type' => 'select',
+        $language_options[$id] = $language->getName();
+      }
+      $form['domain_config_ui']['language'] = [
+        '#type' => 'select',
         '#title' => $this->t('Language'),
-      '#options' => $language_options,
-      '#default_value' => $this->domainConfigUiManager->getSelectedLanguageId(),
-      '#ajax' => [
-        'callback' => '::switchCallback',
-      ],
-    ];
+        '#options' => $language_options,
+        '#default_value' => $this->domainConfigUiManager->getSelectedLanguageId(),
+        '#ajax' => [
+          'callback' => '::switchCallback',
+        ],
+      ];
     }
     return $form;
   }

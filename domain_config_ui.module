@@ -35,30 +35,30 @@ function domain_config_ui_preprocess_page(&$variables) {
 function domain_config_ui_save_warning_message() {
   $manager = \Drupal::service('domain_config_ui.manager');
   if ($selected_domain_id = $manager->getSelectedDomainId()) {
-  $selected_domain = \Drupal::service('entity_type.manager')
-    ->getStorage('domain')
-    ->load($selected_domain_id);
+    $selected_domain = \Drupal::service('entity_type.manager')
+      ->getStorage('domain')
+      ->load($selected_domain_id);
   }
   if ($selected_language_id = $manager->getSelectedLanguageId()) {
     $selected_language = \Drupal::service('language_manager')
       ->getLanguage($selected_language_id);
   }
   $domain_label = !empty($selected_domain) ?
-    new TranslatableMarkup('the @label domain',['@label' => $selected_domain->label()]) :
+    new TranslatableMarkup('the @label domain', ['@label' => $selected_domain->label()]) :
     new TranslatableMarkup('all domains');
   $language_label = !empty($selected_language) ? $selected_language->getName() : new TranslatableMarkup('all languages');
   $message = new TranslatableMarkup('This configuration will be saved for @domain when displayed in @language', [
     '@domain' => $domain_label,
     '@language' => $language_label,
-    ]);
+  ]);
 
-    return [
-      '#markup' => new FormattableMarkup('<div class="messages messages--warning">@message</div>', [
-        '@message' => $message,
-      ]),
+  return [
+    '#markup' => new FormattableMarkup('<div class="messages messages--warning">@message</div>', [
+      '@message' => $message,
+    ]),
     '#weight' => -1000,
-    ];
-  }
+  ];
+}
 
 /**
  * Checks if provided path should have a domain switch form on top of the page.

@@ -6,10 +6,8 @@ use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Domain Config UI manager.
- *
- * @TODO: Write an interface.
  */
-class DomainConfigUIManager {
+class DomainConfigUIManager implements DomainConfigUIManagerInterface {
 
   /**
    * A RequestStack instance.
@@ -29,10 +27,7 @@ class DomainConfigUIManager {
   }
 
   /**
-   * Get selected config name.
-   *
-   * @param string $name
-   *   The config name.
+   * {@inheritdoc}
    */
   public function getSelectedConfigName($name) {
     if ($domain_id = $this->getSelectedDomainId()) {
@@ -46,7 +41,7 @@ class DomainConfigUIManager {
   }
 
   /**
-   * Get the selected domain ID.
+   * {@inheritdoc}
    */
   public function getSelectedDomainId() {
     if ($domain = $this->request->get('domain_config_ui_domain')) {
@@ -58,7 +53,7 @@ class DomainConfigUIManager {
   }
 
   /**
-   * Get the selected language ID.
+   * {@inheritdoc}
    */
   public function getSelectedLanguageId() {
     if ($language = $this->request->get('domain_config_ui_language')) {
@@ -66,7 +61,7 @@ class DomainConfigUIManager {
     }
     if (isset($_SESSION['domain_config_ui_language'])) {
       return $_SESSION['domain_config_ui_language'];
-  }
+    }
   }
 
 }
